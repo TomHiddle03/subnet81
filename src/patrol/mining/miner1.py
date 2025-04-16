@@ -71,7 +71,7 @@ class Miner:
         start_time = time.time()
         miner_id = int(''.join(filter(str.isdigit, self.hotkey)))
         future = run_coroutine_threadsafe(
-            self.graph_generator.run(synapse.target, synapse.target_block_number, miner_id, False),
+            self.graph_generator.run(synapse.target, synapse.target_block_number, synapse.max_block_number, False),
             self.subgraph_loop
         )
         synapse.subgraph_output = future.result()

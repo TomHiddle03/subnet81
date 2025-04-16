@@ -10,7 +10,7 @@ from patrol.protocol import GraphPayload, Node, Edge, TransferEvidence, StakeEvi
 
 class GraphGenerator:
     
-    async def run(self, target_address: str, target_block: int, miner_id: int, dev_mode: bool):
+    async def run(self, target_address: str, target_block: int, max_block_number: int, dev_mode: bool):
         def convert_evidence(edge_dict: dict) -> Union[TransferEvidence, StakeEvidence]:
             """Convert evidence dictionary to TransferEvidence or StakeEvidence based on edge category."""
             evidence_dict = edge_dict.get('evidence', {})
@@ -35,7 +35,7 @@ class GraphGenerator:
                 raise ValueError(f"Unknown edge category: {category}")
 
         port = 4001 if dev_mode else 3000
-        url = f"http://localhost:{port}/transfers?fromAddress={target_address}&blockNumber={target_block}&minerId={miner_id}"
+        url = f"http://localhost:{port}/transfers?fromAddress={target_address}&blockNumber={target_block}&maxBlockNumber={max_block_number}"
         
         graph = None
         try:
@@ -91,7 +91,7 @@ if __name__ == "__main__":
                 samples = [{
                     'target_address': '5DkRocgbM16F41BLGs3UMoqwKdrbmkzQiUHgnzLHXrV9frob',
                     'target_block': 4666564,
-                    'miner_id': 1,
+                    'max_block_number': 1,
                     'dev_mode': True
                 }]
         except FileNotFoundError:
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             samples = [{
                 'target_address': '5DkRocgbM16F41BLGs3UMoqwKdrbmkzQiUHgnzLHXrV9frob',
                 'target_block': 4666564,
-                'miner_id': 1,
+                'max_block_number': 1,
                 'dev_mode': True
             }]
         except json.JSONDecodeError:
@@ -107,7 +107,7 @@ if __name__ == "__main__":
             samples = [{
                 'target_address': '5DkRocgbM16F41BLGs3UMoqwKdrbmkzQiUHgnzLHXrV9frob',
                 'target_block': 4666564,
-                'miner_id': 1,
+                'max_block_number': 1,
                 'dev_mode': True
             }]
 
@@ -118,10 +118,10 @@ if __name__ == "__main__":
             try:
                 target_address = config.get('target_address')
                 target_block = config.get('target_block')
-                miner_id = config.get('miner_id')
+                max_block_number = config.get('max_block_number')
                 dev_mode = config.get('dev_mode')
 
-                if not all([target_address, target_block is not None, miner_id is not None, dev_mode is not None]):
+                if not all([target_address, target_block is not None, max_block_number is not None, dev_mode is not None]):
                     bt.logging.error(f"Invalid configuration {idx}: {config}. Skipping.")
                     continue
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
                 graph = await graph_generator.run(
                     target_address=target_address,
                     target_block=target_block,
-                    miner_id=miner_id,
+                    max_block_number=max_block_number,
                     dev_mode=dev_mode
                 )
                 volume = len(graph.nodes) + len(graph.edges)
