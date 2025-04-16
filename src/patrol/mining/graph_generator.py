@@ -1,5 +1,6 @@
 import time
 import asyncio
+import json
 from typing import Union
 import requests
 
@@ -79,20 +80,91 @@ class GraphGenerator:
 if __name__ == "__main__":
 
     async def example():
-
         bt.debug()
 
-        target_address = "5E7FS5G6avaFRqaL8gwuzy6BtWQphA8niEEeeqeC4X6eeQ7A"
-        target_block = 3898992
-        
-        start_time = time.time()
+        # Load samples from JSON file
+        try:
+            with open('sample.json', 'r') as sample_file:
+                samples = json.load(sample_file).get('samples', [])
+            
+            if not samples:
+                bt.logging.error("No samples found in sample.json. Using default configuration.")
+                samples = [{
+                    'target_address': '5DkRocgbM16F41BLGs3UMoqwKdrbmkzQiUHgnzLHXrV9frob',
+                    'target_block': 4666564,
+                    'miner_id': 1,
+                    'dev_mode': True
+                }]
+        except FileNotFoundError:
+            bt.logging.error("sample.json not found. Using default configuration.")
+            samples = [{
+                'target_address': '5DkRocgbM16F41BLGs3UMoqwKdrbmkzQiUHgnzLHXrV9frob',
+                'target_block': 4666564,
+                'miner_id': 1,
+                'dev_mode': True
+            }]
+        except json.JSONDecodeError:
+            bt.logging.error("Invalid JSON in sample.json. Using default configuration.")
+            samples = [{
+                'target_address': '5DkRocgbM16F41BLGs3UMoqwKdrbmkzQiUHgnzLHXrV9frob',
+                'target_block': 4666564,
+                'miner_id': 1,
+                'dev_mode': True
+            }]
 
         graph_generator = GraphGenerator()
-        graph = await graph_generator.run(target_address=target_address, target_block=target_block, miner_id=1, dev_mode=True)
-        volume = len(graph.nodes) + len(graph.edges)
-        
-        bt.logging.info(f"Finished: {time.time() - start_time} with volume: {volume}")
+        results = []
 
+        # Iterate through each configuration
+        for idx, config in enumerate(samples, 1):
+            try:
+                target_address = config.get('target_address')
+                target_block = config.get('target_block')
+                miner_id = config.get('miner_id')
+                dev_mode = config.get('dev_mode')
+
+                # Validate configuration
+                if not all([target_address, target_block is not None, miner_id is not None, dev_mode is not None]):
+                    bt.logging.error(f"Invalid configuration {idx}: {config}. Skipping.")
+                    continue
+
+                bt.logging.info(f"Running configuration {idx}: {config}")
+                start_time = time.time()
+
+                graph = await graph_generator.run(
+                    target_address=target_address,
+                    target_block=target_block,
+                    miner_id=miner_id,
+                    dev_mode=dev_mode
+                )
+                volume = len(graph.nodes) + len(graph.edges)
+                
+                elapsed_time = time.time() - start_time
+                bt.logging.info(f"Configuration {idx} finished: {elapsed_time} seconds with volume: {volume}")
+                
+                results.append({
+                    'config_index': idx,
+                    'config': config,
+                    'volume': volume,
+                    'elapsed_time': elapsed_time
+                })
+            except Exception as e:
+                bt.logging.error(f"Error processing configuration {idx}: {config}. Error: {e}")
+                results.append({
+                    'config_index': idx,
+                    'config': config,
+                    'error': str(e)
+                })
+
+        # Log summary of results
+        bt.logging.info("Summary of results:")
+        for result in results:
+            if 'error' in result:
+                bt.logging.info(f"Config {result['config_index']}: Failed with error: {result['error']}")
+            else:
+                bt.logging.info(f"Config {result['config_index']}: Volume={result['volume']}, Time={result['elapsed_time']:.2f}s")
+
+        return results
     asyncio.run(example())
 
 
