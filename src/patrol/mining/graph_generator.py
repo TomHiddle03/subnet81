@@ -37,7 +37,7 @@ class GraphGenerator:
         port = 4001 if dev_mode else 3000
         url = f"http://localhost:{port}/transfers?fromAddress={target_address}&blockNumber={target_block}&minerId={miner_id}"
         
-        graph = None  # Initialize graph to avoid UnboundLocalError
+        graph = None
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -82,7 +82,6 @@ if __name__ == "__main__":
     async def example():
         bt.debug()
 
-        # Load samples from JSON file
         try:
             with open('sample.json', 'r') as sample_file:
                 samples = json.load(sample_file).get('samples', [])
@@ -115,7 +114,6 @@ if __name__ == "__main__":
         graph_generator = GraphGenerator()
         results = []
 
-        # Iterate through each configuration
         for idx, config in enumerate(samples, 1):
             try:
                 target_address = config.get('target_address')
@@ -123,7 +121,6 @@ if __name__ == "__main__":
                 miner_id = config.get('miner_id')
                 dev_mode = config.get('dev_mode')
 
-                # Validate configuration
                 if not all([target_address, target_block is not None, miner_id is not None, dev_mode is not None]):
                     bt.logging.error(f"Invalid configuration {idx}: {config}. Skipping.")
                     continue
@@ -156,7 +153,6 @@ if __name__ == "__main__":
                     'error': str(e)
                 })
 
-        # Log summary of results
         bt.logging.info("Summary of results:")
         for result in results:
             if 'error' in result:
