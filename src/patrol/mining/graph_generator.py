@@ -9,8 +9,7 @@ from patrol.protocol import GraphPayload, Node, Edge, TransferEvidence, StakeEvi
 
 class GraphGenerator:
     
-    async def run(self, target_address:str, target_block:int, miner_id: int, dev_mode: bool):
-
+    async def run(self, target_address: str, target_block: int, miner_id: int, dev_mode: bool):
         def convert_evidence(edge_dict: dict) -> Union[TransferEvidence, StakeEvidence]:
             """Convert evidence dictionary to TransferEvidence or StakeEvidence based on edge category."""
             evidence_dict = edge_dict.get('evidence', {})
@@ -34,8 +33,10 @@ class GraphGenerator:
             else:
                 raise ValueError(f"Unknown edge category: {category}")
 
-        port = 4000 if dev_mode else 3000
+        port = 4001 if dev_mode else 3000
         url = f"http://localhost:{port}/transfers?fromAddress={target_address}&blockNumber={target_block}&minerId={miner_id}"
+        
+        graph = None  # Initialize graph to avoid UnboundLocalError
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -69,12 +70,12 @@ class GraphGenerator:
                     bt.logging.error(f"Failed to convert edge: {edge_dict}, error: {e}")
                     raise ValueError(f"Invalid edge data: {edge_dict}")
 
-            subgraph = GraphPayload(nodes=nodes, edges=edges)
+            graph = GraphPayload(nodes=nodes, edges=edges)
         except requests.exceptions.RequestException as e:
-            print(f"Error: {e}") 
+            bt.logging.error(f"Request failed: {e}")
+            raise
 
-        return subgraph
-
+        return graph
 if __name__ == "__main__":
 
     async def example():
