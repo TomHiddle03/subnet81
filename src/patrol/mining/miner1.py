@@ -69,14 +69,22 @@ class Miner:
     async def forward(self, synapse: PatrolSynapse) -> PatrolSynapse:
         bt.logging.info(f"Received request: {synapse.target}, with block number: {synapse.target_block_number}")
         start_time = time.time()
+        miner_id = int(''.join(filter(str.isdigit, self.hotkey)))
         future = run_coroutine_threadsafe(
-            self.graph_generator.run(synapse.target, synapse.target_block_number, 1, False),
+            self.graph_generator.run(synapse.target, synapse.target_block_number, miner_id, False),
             self.subgraph_loop
         )
         synapse.subgraph_output = future.result()
 
         volume = len(synapse.subgraph_output.nodes) + len(synapse.subgraph_output.edges)
-        bt.logging.info(f"Returning a graph of {volume} in {round(time.time() - start_time, 2)} seconds.")
+        time_consumed = round(time.time() - start_time, 2)
+        with open('miner.log', 'a') as f:
+            f.write(
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} - "
+                f"target={synapse.target}, block_number={synapse.target_block_number}, "
+                f"time_consumed={time_consumed}s, volume={volume}, miner_id={miner_id}\n"
+            )
+        bt.logging.info(f"Returning a graph of {volume} in {time_consumed} seconds.")
         return synapse
 
     async def setup_axon(self):
